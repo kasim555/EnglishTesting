@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Vocabulary Trainer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #0a192f, #172a45);
+      color: #e6f1ff;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #64ffda;
+      font-size: 2rem;
+      margin-bottom: 15px;
+    }
+
+    select, button {
+      background: #112240;
+      color: #e6f1ff;
+      border: 2px solid #64ffda;
+      padding: 14px 24px;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 8px;
+      font-size: 1.1rem;
+      transition: all 0.2s ease;
+      width: auto;
+      min-width: 140px;
+    }
+
+    button:hover, select:hover {
+      background: #233554;
+      transform: scale(1.05);
+    }
+
+    #card {
+      background: #112240;
+      padding: 25px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 400px;
+      margin: 25px auto;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+
+    #word {
+      font-size: 1.6rem;
+      margin-bottom: 20px;
+    }
+
+    .option {
+      display: block;
+      margin: 10px 0;
+      padding: 14px;
+      border-radius: 10px;
+      background: #233554;
+      cursor: pointer;
+      font-size: 1.1rem;
+      transition: 0.25s;
+    }
+
+    .option:hover {
+      background: #1f4068;
+      transform: scale(1.03);
+    }
+
+    .correct {
+      background: #046d4d !important;
+      color: #fff;
+    }
+
+    .wrong {
+      background: #7a0000 !important;
+      color: #fff;
+    }
+
+    #feedback {
+      font-size: 1.2rem;
+      margin-top: 10px;
+    }
+
+    #editor {
+      width: 95%;
+      max-width: 600px;
+      height: 250px;
+      background: #0f213b;
+      color: white;
+      border: 1px solid #64ffda;
+      border-radius: 10px;
+      padding: 10px;
+      display: none;
+      margin: 0 auto;
+      font-family: monospace;
+      font-size: 0.95rem;
+    }
+
+    #saveBtn {
+      display: none;
+      margin-top: 10px;
+      background: #046d4d;
+    }
+
+    @media (max-width: 600px) {
+      h1 { font-size: 1.6rem; }
+      select, button {
+        width: 85%;
+        font-size: 1rem;
+        padding: 12px;
+      }
+      #card {
+        width: 95%;
+        padding: 20px;
+      }
+      .option {
+        font-size: 1rem;
+        padding: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Vocabulary Trainer</h1>
+
+  <div>
+    <select id="groupSelect">
+      <option value="1">Группа 1 (лёгкие)</option>
+      <option value="2">Группа 2 (основные)</option>
+      <option value="3">Группа 3 (сложные)</option>
+      <option value="all">Все слова</option>
+    </select>
+    <br>
+    <button id="startBtn">🚀 Начать</button>
+    <button id="editBtn">✏️ Редактировать</button>
+  </div>
+
+  <div id="card" style="display:none;">
+    <h2 id="word"></h2>
+    <div id="options"></div>
+    <p id="feedback"></p>
+  </div>
+
+  <textarea id="editor"></textarea>
+  <br>
+  <button id="saveBtn">💾 Сохранить</button>
+
+  <script>
+    const defaultWords = {
+      1: [
+        ["crucial", "ключевой"], ["to obtain", "получать"], ["to attempt", "пытаться"],
+        ["to hire", "нанимать"], ["internal", "внутренний"], ["consent", "согласие"],
+        ["to gain", "приобретать"], ["fair", "справедливый"], ["theft", "кража"],
+        ["to alter", "изменять"], ["to maintain", "поддерживать"], ["to encourage", "поощрять"],
+        ["to expose", "подвергать"], ["to consider", "рассматривать"], ["to inspire", "вдохновлять"]
+      ],
+      2: [
+        ["intermediary", "посредник"], ["to infiltrate", "проникать"], ["security alert", "предупреждение безопасности"],
+        ["to disable", "отключать"], ["encryption", "шифрование"], ["freeware", "свободное ПО"],
+        ["intruder", "взломщик"], ["firewall", "брандмауэр"], ["malware", "вредоносное ПО"],
+        ["to replicate", "копировать"], ["to disguise", "маскировать"], ["adware", "рекламное ПО"],
+        ["to corrupt", "повреждать"], ["to decipher", "расшифровывать"], ["infringement copyright", "нарушение авторских прав"],
+        ["to censor", "цензурировать"], ["plagiarism", "плагиат"], ["spoofing", "подмена"],
+        ["harassment", "домогательство"], ["abuse", "оскорбление"], ["exploit", "уязвимость"],
+        ["to perpetrate", "совершать"], ["to prosecute", "преследовать"], ["compliant", "соответствующий"],
+        ["to encode", "зашифровывать"], ["to hack", "взламывать"]
+      ],
+      3: [
+        ["temporarily", "временно"], ["offensive", "оскорбительный"], ["indecent", "неприличный"],
+        ["domain", "домен"], ["social security number", "номер соцстрахования"], ["decryption", "расшифровка"],
+        ["unauthorized", "несанкционированный"], ["to extort", "вымогать"], ["denial", "отказ"],
+        ["whistle", "свисток"], ["in between", "в промежутке"], ["to make aware of", "поставить в известность"],
+        ["to high", "на высоком уровне"]
+      ]
+    };
+
+    let words = JSON.parse(localStorage.getItem("vocabWords")) || defaultWords;
+    const groupSelect = document.getElementById("groupSelect");
+    const startBtn = document.getElementById("startBtn");
+    const editBtn = document.getElementById("editBtn");
+    const saveBtn = document.getElementById("saveBtn");
+    const editor = document.getElementById("editor");
+    const card = document.getElementById("card");
+    const wordEl = document.getElementById("word");
+    const optionsDiv = document.getElementById("options");
+    const feedback = document.getElementById("feedback");
+
+    let currentList = [];
+    let currentWord = null;
+
+    function shuffle(arr){ return arr.sort(() => Math.random() - 0.5); }
+
+    startBtn.onclick = () => {
+      let g = groupSelect.value;
+      currentList = g === "all" ? [...words[1],...words[2],...words[3]] : [...words[g]];
+      shuffle(currentList);
+      nextWord();
+      card.style.display = "block";
+      window.scrollTo({ top: card.offsetTop, behavior: "smooth" });
+    };
+
+    function nextWord(){
+      feedback.textContent = "";
+      if(currentList.length === 0){ 
+        wordEl.textContent = "✅ Все слова пройдены!";
+        optionsDiv.innerHTML = "";
+        return;
+      }
+      currentWord = currentList.pop();
+      wordEl.textContent = currentWord[0];
+
+      let allWords = [...words[1], ...words[2], ...words[3]];
+      let wrongOptions = shuffle(allWords.filter(w => w[1] !== currentWord[1])).slice(0,3);
+      let choices = shuffle([currentWord, ...wrongOptions]);
+
+      optionsDiv.innerHTML = "";
+      choices.forEach(choice => {
+        const btn = document.createElement("div");
+        btn.className = "option";
+        btn.textContent = choice[1];
+        btn.onclick = () => checkAnswer(btn, choice);
+        optionsDiv.appendChild(btn);
+      });
+    }
+
+    function checkAnswer(btn, choice){
+      if(choice[1] === currentWord[1]){
+        btn.classList.add("correct");
+        feedback.textContent = "✅ Верно!";
+        setTimeout(nextWord, 800);
+      } else {
+        btn.classList.add("wrong");
+        feedback.textContent = `❌ Правильно: ${currentWord[1]}`;
+      }
+    }
+
+    editBtn.onclick = () => {
+      editor.style.display = editor.style.display === "none" ? "block" : "none";
+      saveBtn.style.display = saveBtn.style.display === "none" ? "inline-block" : "none";
+      editor.value = JSON.stringify(words, null, 2);
+    };
+
+    saveBtn.onclick = () => {
+      try {
+        words = JSON.parse(editor.value);
+        localStorage.setItem("vocabWords", JSON.stringify(words));
+        alert("✅ Слова сохранены!");
+        editor.style.display = "none";
+        saveBtn.style.display = "none";
+      } catch {
+        alert("❌ Ошибка: проверь формат JSON");
+      }
+    };
+  </script>
+</body>
+</html>
